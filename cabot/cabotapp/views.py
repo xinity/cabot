@@ -51,13 +51,11 @@ def subscriptions(request):
     })
     return HttpResponse(t.render(c))
 
-
 @login_required
 def run_status_check(request, pk):
     """Runs a specific check"""
     _run_status_check(check_or_id=pk)
     return HttpResponseRedirect(reverse('check', kwargs={'pk': pk}))
-
 
 def duplicate_icmp_check(request, pk):
     pc = StatusCheck.objects.get(pk=pk)
@@ -161,7 +159,7 @@ class GraphiteStatusCheckForm(StatusCheckForm):
             'active',
             'importance',
             'expected_num_hosts',
-            'expected_num_metrics',
+            'allowed_num_failures',
             'debounce',
         )
         widgets = dict(**base_widgets)
@@ -575,7 +573,7 @@ def get_object_form(model_type):
 class GeneralSettingsForm(forms.Form):
     first_name = forms.CharField(label='First name', max_length=30, required=False)
     last_name  = forms.CharField(label='Last name', max_length=30, required=False)
-    email_address = forms.CharField(label='Email Address', max_length=30, required=False)
+    email_address = forms.CharField(label='Email Address', max_length=75, required=False) #We use 75 and not the 254 because Django 1.6.8 only supports 75. See commit message for details.
     enabled = forms.BooleanField(label='Enabled', required=False)
 
 class InstanceListView(LoginRequiredMixin, ListView):
@@ -666,6 +664,21 @@ class InstanceCreateView(LoginRequiredMixin, CreateView):
 
         return initial
 
+
+@login_required
+def acknowledge_alert(request, pk):
+    service = Service.objects.get(pk=pk)
+    service.acknowledge_alert(user=request.user)
+    return HttpResponseRedirect(reverse('service', kwargs={'pk': pk}))
+
+
+@login_required
+def remove_acknowledgement(request, pk):
+    service = Service.objects.get(pk=pk)
+    service.remove_acknowledgement(user=request.user)
+    return HttpResponseRedirect(reverse('service', kwargs={'pk': pk}))
+
+
 class ServiceCreateView(LoginRequiredMixin, CreateView):
     model = Service
     form_class = ServiceForm
@@ -674,12 +687,14 @@ class ServiceCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse('service', kwargs={'pk': self.object.id})
 
+
 class InstanceUpdateView(LoginRequiredMixin, UpdateView):
     model = Instance
     form_class = InstanceForm
 
     def get_success_url(self):
         return reverse('instance', kwargs={'pk': self.object.id})
+
 
 class ServiceUpdateView(LoginRequiredMixin, UpdateView):
     model = Service

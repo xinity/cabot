@@ -58,6 +58,8 @@ packages=(
   'postgresql'
   'nginx'
   'htop'
+  'libsasl2-dev'
+  'libldap2-dev'
 )
 
 sudo apt-get update
@@ -85,7 +87,7 @@ sudo pip install -U pip --no-use-wheel # Don't ask
 # install coffee and less
 sudo npm install -g coffee-script less@1.3 --registry http://registry.npmjs.org/
 
-sudo gem install foreman
+sudo gem install foreman --version 0.77.0
 
 # Set redis pass
 set +e
@@ -170,7 +172,7 @@ server {
 #   }
 
 #   location /static/ {
-#     alias $DEPLOY_PATH/static/;
+#     alias /home/ubuntu/cabot/static/;
 #   }
 # }
 EOF
